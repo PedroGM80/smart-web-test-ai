@@ -212,4 +212,21 @@ async def get_stats():
         "by_mode": by_mode
     }
 
+@app.get("/dashboard/data")
+async def get_dashboard_data():
+    """Obtiene datos para dashboard"""
+    try:
+        from dashboard_analytics import DashboardAnalytics
+        analytics = DashboardAnalytics()
+        return analytics.get_all_data()
+    except Exception as e:
+        return {
+            "error": str(e),
+            "summary": {
+                "total_tests": 0,
+                "avg_pass_rate": 0,
+                "avg_duration": 0
+            }
+        }
+
 # Para ejecutar: uvicorn api:app --reload
