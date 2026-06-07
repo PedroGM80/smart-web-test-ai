@@ -4,13 +4,17 @@ Supports SQLite (development) and PostgreSQL (production)
 """
 
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, ForeignKey, Boolean, Text, Enum as SQLEnum
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from sqlalchemy.pool import StaticPool
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 import enum
+
+
+def utcnow():
+    """Timezone-aware UTC timestamp (replaces deprecated utcnow)."""
+    return datetime.now(timezone.utc)
 
 # ==================== DATABASE CONFIGURATION ====================
 
@@ -36,6 +40,7 @@ Base = declarative_base()
 # ==================== ENUMS ====================
 
 class TestStatus(str, enum.Enum):
+    __test__ = False  # avoid pytest collection
     SUCCESS = "success"
     FAILURE = "failure"
     TIMEOUT = "timeout"
@@ -43,6 +48,7 @@ class TestStatus(str, enum.Enum):
 
 
 class TestMode(str, enum.Enum):
+    __test__ = False  # avoid pytest collection
     SPEED = "speed"
     BALANCED = "balanced"
     QUALITY = "quality"
@@ -52,6 +58,7 @@ class TestMode(str, enum.Enum):
 
 class Test(Base):
     """Test execution record"""
+    __test__ = False  # avoid pytest collection
     __tablename__ = "tests"
     
     id = Column(Integer, primary_key=True, index=True)
@@ -63,8 +70,8 @@ class Test(Base):
     model = Column(String(100), index=True)
     status = Column(SQLEnum(TestStatus), default=TestStatus.SUCCESS)
     error_message = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow, index=True)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
     
     # Relationships
     failures = relationship("Failure", back_populates="test")
@@ -86,8 +93,8 @@ class ModelPerformance(Base):
     avg_duration = Column(Float, default=0.0)
     min_pass_rate = Column(Float, default=0.0)
     max_pass_rate = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
     
     def __repr__(self):
         return f"<ModelPerformance(model={self.model}, avg_pass_rate={self.avg_pass_rate})>"
@@ -105,8 +112,8 @@ class Failure(Base):
     resolved = Column(Boolean, default=False)
     resolution_date = Column(DateTime, nullable=True)
     notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
     
     # Relationships
     test = relationship("Test", back_populates="failures")
@@ -124,7 +131,7 @@ class Metric(Base):
     metric_name = Column(String(100), index=True)
     metric_value = Column(Float)
     unit = Column(String(50))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
     
     # Relationships
     test = relationship("Test", back_populates="metrics")
@@ -142,8 +149,8 @@ class Domain(Base):
     total_tests = Column(Integer, default=0)
     avg_pass_rate = Column(Float, default=0.0)
     last_tested = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
     
     def __repr__(self):
         return f"<Domain(domain={self.domain}, avg_pass_rate={self.avg_pass_rate})>"
@@ -309,7 +316,7 @@ class Database:
             if tests:
                 domain_obj.avg_pass_rate = sum(t.pass_rate for t in tests) / len(tests)
             
-            domain_obj.last_tested = datetime.utcnow()
+            domain_obj.last_tested = utcnow()
             session.commit()
             
             return domain_obj
@@ -326,7 +333,7 @@ class Database:
             
             if days:
                 from datetime import timedelta
-                cutoff = datetime.utcnow() - timedelta(days=days)
+                cutoff = utcnow() - timedelta(days=days)
                 query = query.filter(Test.created_at >= cutoff)
             
             tests = query.all()
