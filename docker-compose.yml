@@ -1,24 +1,74 @@
 version: '3.8'
 
 services:
-  influxdb:
-    image: influxdb:2.7
-    container_name: smart-test-influxdb
+  # Ollama - IA Local
+  ollama:
+    image: ollama/ollama:latest
+    container_name: smart-test-ollama
     ports:
-      - "8086:8086"
-    environment:
-      INFLUXDB_DB: smart_tests
-      INFLUXDB_ADMIN_USER: admin
-      INFLUXDB_ADMIN_PASSWORD: admin123
-      INFLUXDB_HTTP_AUTH_ENABLED: "false"
+      - "11434:11434"
     volumes:
-      - influxdb_data:/var/lib/influxdb2
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
     healthcheck:
-      test: ["CMD", "influx", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - full
+      - ollama-only
 
+  # API REST
+  api:
+    build: .
+    container_name: smart-test-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ./api_results.json:/app/api_results.json
+      - ./model_learning.json:/app/model_learning.json
+      - ./advanced_rag_data.json:/app/advanced_rag_data.json
+    command: uvicorn api:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - full
+      - api-only
+
+  # Web UI (Streamlit)
+  web:
+    build: .
+    container_name: smart-test-web
+    ports:
+      - "8501:8501"
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OLLAMA_HOST=http://ollama:11434
+    volumes:
+      - ./test_history.json:/app/test_history.json
+      - ./model_learning.json:/app/model_learning.json
+    command: streamlit run smart_test_ui.py --server.port 8501 --server.address 0.0.0.0
+    profiles:
+      - full
+      - web-only
+
+  # Grafana (Monitoreo)
   grafana:
     image: grafana/grafana:latest
     container_name: smart-test-grafana
@@ -39,9 +89,37 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    profiles:
+      - full
+      - monitoring
+
+  # InfluxDB (Time-Series)
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: smart-test-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      INFLUXDB_DB: smart_tests
+      INFLUXDB_ADMIN_USER: admin
+      INFLUXDB_ADMIN_PASSWORD: admin123
+      INFLUXDB_HTTP_AUTH_ENABLED: "false"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - full
+      - monitoring
 
 volumes:
-  influxdb_data:
-    driver: local
+  ollama_data:
   grafana_data:
-    driver: local
+  influxdb_data:
+
+networks:
+  default:
+    name: smart-test-network
