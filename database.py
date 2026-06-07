@@ -12,6 +12,8 @@ import logging
 from pathlib import Path
 import enum
 
+from stats_service import StatsService
+
 logger = logging.getLogger(__name__)
 
 
@@ -367,25 +369,11 @@ class Database:
             
             tests = query.all()
             
-            if not tests:
-                return {
-                    "total_tests": 0,
-                    "avg_pass_rate": 0,
-                    "avg_duration": 0,
-                    "success_count": 0,
-                    "failure_count": 0
-                }
-            
-            stats = {
-                "total_tests": len(tests),
-                "avg_pass_rate": sum(t.pass_rate for t in tests) / len(tests),
-                "avg_duration": sum(t.duration for t in tests) / len(tests),
-                "success_count": sum(1 for t in tests if t.status == TestStatus.SUCCESS),
-                "failure_count": sum(1 for t in tests if t.status == TestStatus.FAILURE),
-                "min_pass_rate": min(t.pass_rate for t in tests),
-                "max_pass_rate": max(t.pass_rate for t in tests)
-            }
-            return stats
+            return StatsService.summarize(
+                pass_rates=[t.pass_rate for t in tests],
+                durations=[t.duration for t in tests],
+                statuses=[t.status.value for t in tests],
+            )
         finally:
             session.close()
 

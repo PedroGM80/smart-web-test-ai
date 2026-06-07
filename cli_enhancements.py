@@ -13,6 +13,8 @@ from rich.table import Table
 from rich.panel import Panel
 import csv
 
+from stats_service import StatsService
+
 console = Console()
 
 
@@ -214,17 +216,15 @@ class CLIEnhancer:
         console.print(table)
     
     def _calculate_stats(self, results: List[Dict]) -> Dict:
-        """Calculate statistics from results"""
-        if not results:
-            return {"avg_pass_rate": 0, "avg_duration": 0, "count": 0}
-        
-        pass_rates = [r.get("pass_rate", 0) for r in results]
-        durations = [r.get("duration", 0) for r in results]
-        
+        """Calculate statistics from results (delegates to StatsService)"""
+        summary = StatsService.summarize(
+            pass_rates=[r.get("pass_rate", 0) for r in results],
+            durations=[r.get("duration", 0) for r in results],
+        )
         return {
-            "avg_pass_rate": sum(pass_rates) / len(pass_rates),
-            "avg_duration": sum(durations) / len(durations),
-            "count": len(results)
+            "avg_pass_rate": summary["avg_pass_rate"],
+            "avg_duration": summary["avg_duration"],
+            "count": summary["total_tests"],
         }
     
     # ==================== EXPORT COMMANDS ====================
@@ -312,16 +312,18 @@ class CLIEnhancer:
             console.print("[yellow]No data for this period[/yellow]")
             return
         
-        # Calculate stats
-        pass_rates = [h.get("pass_rate", 0) for h in history]
-        durations = [h.get("duration", 0) for h in history]
-        
+        # Calculate stats via the shared service
+        summary = StatsService.summarize(
+            pass_rates=[h.get("pass_rate", 0) for h in history],
+            durations=[h.get("duration", 0) for h in history],
+        )
+
         stats = {
-            "Total Tests": len(history),
-            "Avg Pass Rate": f"{sum(pass_rates)/len(pass_rates):.1f}%",
-            "Avg Duration": f"{sum(durations)/len(durations):.1f}s",
-            "Min Pass Rate": f"{min(pass_rates):.1f}%",
-            "Max Pass Rate": f"{max(pass_rates):.1f}%",
+            "Total Tests": summary["total_tests"],
+            "Avg Pass Rate": f"{summary['avg_pass_rate']:.1f}%",
+            "Avg Duration": f"{summary['avg_duration']:.1f}s",
+            "Min Pass Rate": f"{summary['min_pass_rate']:.1f}%",
+            "Max Pass Rate": f"{summary['max_pass_rate']:.1f}%",
             "Time Range": f"{history[0].get('timestamp', '')[:10]} to {history[-1].get('timestamp', '')[:10]}"
         }
         
