@@ -178,12 +178,15 @@ class Domain(Base):
 # ==================== DATABASE OPERATIONS ====================
 
 class Database:
-    """Database operations wrapper.
+    """Facade over the data layer.
 
-    By default uses the module-level engine, but an engine and/or session
-    factory can be injected (e.g. by tests or an app that configures its own
-    database). This keeps high-level code from depending on a single concrete
-    database instance (Dependency Inversion).
+    Owns schema/connection management and composes the repositories. The
+    public methods are thin delegations kept for backwards compatibility, so
+    existing callers and tests keep working while persistence now lives in
+    dedicated repositories (Single Responsibility).
+
+    Engine/session can be injected (Dependency Inversion); falls back to the
+    module-level defaults.
     """
 
     def __init__(self, bound_engine=None, session_factory=None):
@@ -194,188 +197,59 @@ class Database:
             self.Session = create_session_factory(bound_engine)
         else:
             self.Session = SessionLocal
-    
+
+        # Compose repositories (imported here to avoid an import cycle)
+        from repositories import (
+            TestRepository,
+            ModelPerformanceRepository,
+            DomainRepository,
+        )
+        self.tests = TestRepository(self.Session)
+        self.models = ModelPerformanceRepository(self.Session)
+        self.domains = DomainRepository(self.Session)
+
     def get_session(self):
         """Get database session"""
         return self.Session()
-    
+
     def create_all_tables(self):
         """Create all tables"""
         Base.metadata.create_all(bind=self.engine)
         logger.info("Database tables created")
-    
+
     def drop_all_tables(self):
         """Drop all tables (WARNING: Development only)"""
         Base.metadata.drop_all(bind=self.engine)
         logger.info("All tables dropped")
-    
-    # ==================== TEST OPERATIONS ====================
-    
-    def add_test(self, url: str, objective: str, pass_rate: float, 
-                 duration: float, mode: str, model: str, status: str = "success"):
-        """Add test to database"""
-        session = self.get_session()
-        try:
-            test = Test(
-                url=url,
-                objective=objective,
-                pass_rate=pass_rate,
-                duration=duration,
-                mode=TestMode(mode),
-                model=model,
-                status=TestStatus(status)
-            )
-            session.add(test)
-            session.commit()
-            test_id = test.id
-            return test_id
-        finally:
-            session.close()
-    
-    def get_tests(self, limit: int = 100, offset: int = 0):
-        """Get tests from database"""
-        session = self.get_session()
-        try:
-            tests = session.query(Test).limit(limit).offset(offset).all()
-            return tests
-        finally:
-            session.close()
-    
-    def get_test_by_id(self, test_id: int):
-        """Get test by ID"""
-        session = self.get_session()
-        try:
-            test = session.query(Test).filter(Test.id == test_id).first()
-            return test
-        finally:
-            session.close()
-    
-    def get_tests_by_model(self, model: str, limit: int = 100):
-        """Get tests by model"""
-        session = self.get_session()
-        try:
-            tests = session.query(Test).filter(Test.model == model).limit(limit).all()
-            return tests
-        finally:
-            session.close()
-    
-    def get_tests_by_url(self, url: str, limit: int = 100):
-        """Get tests by URL"""
-        session = self.get_session()
-        try:
-            tests = session.query(Test).filter(Test.url == url).limit(limit).all()
-            return tests
-        finally:
-            session.close()
-    
-    # ==================== MODEL PERFORMANCE ====================
-    
-    def update_model_stats(self, model: str):
-        """Update model performance statistics"""
-        session = self.get_session()
-        try:
-            tests = session.query(Test).filter(Test.model == model).all()
-            
-            if not tests:
-                return None
-            
-            total = len(tests)
-            successful = sum(1 for t in tests if t.status == TestStatus.SUCCESS)
-            avg_pass = sum(t.pass_rate for t in tests) / total
-            avg_duration = sum(t.duration for t in tests) / total
-            min_pass = min(t.pass_rate for t in tests)
-            max_pass = max(t.pass_rate for t in tests)
-            
-            perf = session.query(ModelPerformance).filter(
-                ModelPerformance.model == model
-            ).first()
-            
-            if perf:
-                perf.total_tests = total
-                perf.successful_tests = successful
-                perf.avg_pass_rate = avg_pass
-                perf.avg_duration = avg_duration
-                perf.min_pass_rate = min_pass
-                perf.max_pass_rate = max_pass
-            else:
-                perf = ModelPerformance(
-                    model=model,
-                    total_tests=total,
-                    successful_tests=successful,
-                    avg_pass_rate=avg_pass,
-                    avg_duration=avg_duration,
-                    min_pass_rate=min_pass,
-                    max_pass_rate=max_pass
-                )
-                session.add(perf)
-            
-            session.commit()
-            return perf
-        finally:
-            session.close()
-    
-    def get_model_stats(self, model: str):
-        """Get model statistics"""
-        session = self.get_session()
-        try:
-            stats = session.query(ModelPerformance).filter(
-                ModelPerformance.model == model
-            ).first()
-            return stats
-        finally:
-            session.close()
-    
-    # ==================== DOMAIN TRACKING ====================
-    
-    def track_domain(self, url: str):
-        """Track domain from URL"""
-        from urllib.parse import urlparse
-        domain = urlparse(url).netloc
-        
-        session = self.get_session()
-        try:
-            domain_obj = session.query(Domain).filter(Domain.domain == domain).first()
-            
-            if not domain_obj:
-                domain_obj = Domain(domain=domain, total_tests=0, avg_pass_rate=0.0)
-                session.add(domain_obj)
-                session.flush()
-            
-            domain_obj.total_tests += 1
-            
-            tests = session.query(Test).filter(Test.url.contains(domain)).all()
-            if tests:
-                domain_obj.avg_pass_rate = sum(t.pass_rate for t in tests) / len(tests)
-            
-            domain_obj.last_tested = utcnow()
-            session.commit()
-            
-            return domain_obj
-        finally:
-            session.close()
-    
-    # ==================== REPORTING ====================
-    
-    def get_statistics(self, days: int = None):
-        """Get database statistics"""
-        session = self.get_session()
-        try:
-            query = session.query(Test)
-            
-            if days:
-                from datetime import timedelta
-                cutoff = utcnow() - timedelta(days=days)
-                query = query.filter(Test.created_at >= cutoff)
-            
-            tests = query.all()
-            
-            return StatsService.summarize(
-                pass_rates=[t.pass_rate for t in tests],
-                durations=[t.duration for t in tests],
-                statuses=[t.status.value for t in tests],
-            )
-        finally:
-            session.close()
+
+    # ---- Delegations (backwards-compatible public API) ----
+
+    def add_test(self, url, objective, pass_rate, duration, mode, model, status="success"):
+        return self.tests.add(url, objective, pass_rate, duration, mode, model, status)
+
+    def get_tests(self, limit=100, offset=0):
+        return self.tests.list(limit=limit, offset=offset)
+
+    def get_test_by_id(self, test_id):
+        return self.tests.get_by_id(test_id)
+
+    def get_tests_by_model(self, model, limit=100):
+        return self.tests.get_by_model(model, limit=limit)
+
+    def get_tests_by_url(self, url, limit=100):
+        return self.tests.get_by_url(url, limit=limit)
+
+    def update_model_stats(self, model):
+        return self.models.refresh(model)
+
+    def get_model_stats(self, model):
+        return self.models.get(model)
+
+    def track_domain(self, url):
+        return self.domains.track(url)
+
+    def get_statistics(self, days=None):
+        return self.tests.statistics(days=days)
 
 
 # ==================== INITIALIZATION ====================
