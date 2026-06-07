@@ -230,3 +230,60 @@ async def get_dashboard_data():
         }
 
 # Para ejecutar: uvicorn api:app --reload
+
+@app.post("/slack/webhook")
+async def setup_slack_webhook(webhook_url: str):
+    """
+    Configura webhook de Slack
+    
+    Args:
+        webhook_url: URL del webhook de Slack
+    
+    Returns:
+        Status de configuración
+    """
+    if not webhook_url.startswith("https://hooks.slack.com"):
+        raise HTTPException(status_code=400, detail="Invalid Slack webhook URL")
+    
+    # Guarda en .env
+    from pathlib import Path
+    env_file = Path(".env")
+    
+    content = env_file.read_text() if env_file.exists() else ""
+    lines = content.split("\n")
+    
+    # Reemplaza o añade
+    found = False
+    for i, line in enumerate(lines):
+        if line.startswith("SLACK_WEBHOOK_URL="):
+            lines[i] = f"SLACK_WEBHOOK_URL={webhook_url}"
+            found = True
+            break
+    
+    if not found:
+        lines.append(f"SLACK_WEBHOOK_URL={webhook_url}")
+    
+    env_file.write_text("\n".join(lines))
+    
+    return {
+        "status": "configured",
+        "message": "Slack webhook configurado"
+    }
+
+@app.post("/test/with-slack")
+async def execute_test_with_slack(request: TestRequest):
+    """
+    Ejecuta test y envía resultado a Slack
+    """
+    # Ejecuta test normal
+    result = await execute_test(request)
+    
+    # Envía a Slack
+    try:
+        from slack_integration import SlackNotifier
+        notifier = SlackNotifier()
+        notifier.send_test_result(result.dict())
+    except:
+        pass  # Slack es opcional
+    
+    return result
