@@ -8,8 +8,11 @@ from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from sqlalchemy.pool import StaticPool
 from datetime import datetime, timezone
 import os
+import logging
 from pathlib import Path
 import enum
+
+logger = logging.getLogger(__name__)
 
 
 def utcnow():
@@ -21,20 +24,34 @@ def utcnow():
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./smarttest.db")
 ECHO_SQL = os.getenv("ECHO_SQL", "false").lower() == "true"
 
-# Create engine based on database type
-if "postgresql" in DATABASE_URL:
-    engine = create_engine(DATABASE_URL, echo=ECHO_SQL)
-else:
-    # SQLite for development
-    engine = create_engine(
-        DATABASE_URL,
-        echo=ECHO_SQL,
+Base = declarative_base()
+
+
+def create_db_engine(database_url: str = DATABASE_URL, echo: bool = ECHO_SQL):
+    """Build a SQLAlchemy engine for the given database URL.
+
+    Centralizes engine creation so callers (app, tests) can inject their own
+    database instead of depending on a single module-level engine.
+    """
+    if "postgresql" in database_url:
+        return create_engine(database_url, echo=echo)
+    # SQLite (development / tests)
+    return create_engine(
+        database_url,
+        echo=echo,
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool
+        poolclass=StaticPool,
     )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
-Base = declarative_base()
+
+def create_session_factory(bound_engine):
+    """Build a session factory bound to the given engine."""
+    return sessionmaker(autocommit=False, autoflush=False, bind=bound_engine, expire_on_commit=False)
+
+
+# Default module-level engine and session factory (backwards compatible)
+engine = create_db_engine()
+SessionLocal = create_session_factory(engine)
 
 
 # ==================== ENUMS ====================
@@ -159,10 +176,22 @@ class Domain(Base):
 # ==================== DATABASE OPERATIONS ====================
 
 class Database:
-    """Database operations wrapper"""
-    
-    def __init__(self):
-        self.Session = SessionLocal
+    """Database operations wrapper.
+
+    By default uses the module-level engine, but an engine and/or session
+    factory can be injected (e.g. by tests or an app that configures its own
+    database). This keeps high-level code from depending on a single concrete
+    database instance (Dependency Inversion).
+    """
+
+    def __init__(self, bound_engine=None, session_factory=None):
+        self.engine = bound_engine if bound_engine is not None else engine
+        if session_factory is not None:
+            self.Session = session_factory
+        elif bound_engine is not None:
+            self.Session = create_session_factory(bound_engine)
+        else:
+            self.Session = SessionLocal
     
     def get_session(self):
         """Get database session"""
@@ -170,13 +199,13 @@ class Database:
     
     def create_all_tables(self):
         """Create all tables"""
-        Base.metadata.create_all(bind=engine)
-        print("✅ Database tables created")
+        Base.metadata.create_all(bind=self.engine)
+        logger.info("Database tables created")
     
     def drop_all_tables(self):
         """Drop all tables (WARNING: Development only)"""
-        Base.metadata.drop_all(bind=engine)
-        print("✅ All tables dropped")
+        Base.metadata.drop_all(bind=self.engine)
+        logger.info("All tables dropped")
     
     # ==================== TEST OPERATIONS ====================
     
@@ -371,5 +400,6 @@ def init_db():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     db = init_db()
-    print("✅ Database initialized")
+    logger.info("Database initialized")

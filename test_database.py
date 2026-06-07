@@ -13,18 +13,18 @@ from sqlalchemy.orm import sessionmaker
 
 @pytest.fixture
 def temp_db():
-    """Create isolated database for each test"""
-    from database import Base, engine as db_engine
+    """Create isolated in-memory database for each test via dependency injection."""
+    from database import Base, create_db_engine, create_session_factory
 
-    # Recreate all tables fresh for full isolation between tests
-    Base.metadata.drop_all(bind=db_engine)
-    Base.metadata.create_all(bind=db_engine)
+    test_engine = create_db_engine("sqlite:///:memory:")
+    Base.metadata.create_all(bind=test_engine)
+    session_factory = create_session_factory(test_engine)
 
-    db = Database()
+    db = Database(bound_engine=test_engine, session_factory=session_factory)
     yield db
 
-    # Cleanup after test
-    Base.metadata.drop_all(bind=db_engine)
+    Base.metadata.drop_all(bind=test_engine)
+    test_engine.dispose()
 
 
 class TestDatabase:
