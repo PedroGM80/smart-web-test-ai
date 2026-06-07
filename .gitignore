@@ -44,6 +44,9 @@ screenshots/
 reports/
 .env
 *.log
+knowledge/
+knowledge_backup.json
+knowledge_export.json
 
 # OS
 .DS_Store

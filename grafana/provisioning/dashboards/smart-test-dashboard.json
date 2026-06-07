@@ -1,0 +1,167 @@
+{
+  "dashboard": {
+    "title": "Smart Web Test - Testing Metrics",
+    "tags": ["testing", "qa", "automation"],
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Pass Rate",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "from(bucket: \"test_metrics\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"test_execution\") |> filter(fn: (r) => r._field == \"pass_rate\") |> last()",
+            "datasourceUid": "influxdb-uid"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "tooltip": false,
+                "viz": false,
+                "legend": false
+              }
+            },
+            "mappings": [],
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Total Tests",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "from(bucket: \"test_metrics\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"test_execution\") |> filter(fn: (r) => r._field == \"total_actions\") |> sum()",
+            "datasourceUid": "influxdb-uid"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Failed Actions",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "from(bucket: \"test_metrics\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"test_execution\") |> filter(fn: (r) => r._field == \"failed_actions\") |> sum()",
+            "datasourceUid": "influxdb-uid"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Pass Rate Over Time",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "from(bucket: \"test_metrics\") |> range(start: -24h) |> filter(fn: (r) => r._measurement == \"test_execution\") |> filter(fn: (r) => r._field == \"pass_rate\") |> aggregateWindow(every: 1h, fn: mean)",
+            "datasourceUid": "influxdb-uid"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10
+            },
+            "unit": "percent",
+            "max": 100,
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Actions Status",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "from(bucket: \"test_metrics\") |> range(start: -24h) |> filter(fn: (r) => r._measurement == \"test_execution\") |> filter(fn: (r) => r._field == \"passed_actions\" or r._field == \"failed_actions\")",
+            "datasourceUid": "influxdb-uid"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "URLs Testeadas",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "query": "from(bucket: \"test_metrics\") |> range(start: -1h) |> filter(fn: (r) => r._measurement == \"test_execution\") |> group(columns: [\"url\"]) |> last()",
+            "datasourceUid": "influxdb-uid"
+          }
+        ]
+      }
+    ]
+  }
+}

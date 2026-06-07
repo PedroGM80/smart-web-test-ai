@@ -1,0 +1,15 @@
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    jsonData:
+      version: Flux
+      organization: smart-test
+      bucket: test_metrics
+      defaultBucket: test_metrics
+    secureJsonData:
+      token: smart-test-token

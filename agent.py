@@ -267,7 +267,8 @@ Da un veredicto claro: PASÓ o FALLÓ, con razones.
         
         return validation
     
-    def test_web(self, url: str, objectives: str, headless: bool = True) -> dict:
+    def test_web(self, url: str, objectives: str, headless: bool = True, 
+                 generate_cucumber: bool = False) -> dict:
         """
         Ejecuta testing automático completo en una URL
         
@@ -275,6 +276,7 @@ Da un veredicto claro: PASÓ o FALLÓ, con razones.
             url: URL a testear
             objectives: Qué testear (descripción)
             headless: Ejecutar sin interfaz gráfica
+            generate_cucumber: Generar feature files de Cucumber
         
         Returns:
             Reporte completo del testing
@@ -323,6 +325,18 @@ Da un veredicto claro: PASÓ o FALLÓ, con razones.
                     "results_log": self.test_results,
                     "timestamp": datetime.now().isoformat()
                 }
+                
+                # Genera Cucumber features si se solicita
+                if generate_cucumber:
+                    from cucumber_generator import generate_cucumber_files
+                    cucumber_files = generate_cucumber_files(
+                        url=url,
+                        objectives=objectives,
+                        page_analysis=page_analysis,
+                        plan=plan
+                    )
+                    report["cucumber"] = cucumber_files
+                    self._log_result("ℹ", f"Features Cucumber generados en {cucumber_files['features_dir']}")
                 
                 self._save_report(report)
                 self._print_summary(report)

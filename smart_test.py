@@ -41,6 +41,11 @@ Ejemplos:
         default="llava",
         help="Modelo vision Ollama (default: llava)"
     )
+    parser.add_argument(
+        "--cucumber",
+        action="store_true",
+        help="Generar feature files de Cucumber/Gherkin"
+    )
     
     args = parser.parse_args()
     
@@ -60,7 +65,8 @@ Ejemplos:
         report = agent.test_web(
             url=args.url,
             objectives=args.objective,
-            headless=not args.headed
+            headless=not args.headed,
+            generate_cucumber=args.cucumber
         )
         
         sys.exit(0)

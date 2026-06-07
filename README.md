@@ -10,6 +10,11 @@ Testing web automático usando IA local (Ollama) + Playwright. Sin código hardc
 - **Análisis**: Comprende estructura HTML y UI visual
 - **CLI**: Interfaz simple por terminal
 - **Reportes**: Genera JSON con resultados
+- **Cucumber/BDD**: Genera feature files de Gherkin automáticamente
+- **Behave**: Tests ejecutables en lenguaje natural
+- **Grafana**: Dashboards de métricas en tiempo real
+- **InfluxDB**: Base de datos time-series para almacenar métricas
+- **RAG**: Aprende automáticamente de tests anteriores (ChromaDB + Embeddings locales)
 
 ## Requisitos
 
@@ -81,6 +86,61 @@ python smart_test.py "https://google.com" "Buscar y validar" --model mistral
 - `--headed`: Muestra navegador (útil para debug)
 - `--model`: Modelo Ollama (default: mistral)
 - `--vision-model`: Modelo vision (default: llava)
+- `--cucumber`: Genera feature files de Cucumber automáticamente
+
+### Cucumber/BDD
+
+Genera feature files ejecutables en Gherkin:
+
+```bash
+# Genera features automáticamente
+python smart_test.py "https://example.com" "Objetivo" --cucumber
+
+# Ejecuta tests
+behave features/
+
+# Reporte HTML
+behave features/ --format html --outfile report.html
+```
+
+Ver [CUCUMBER.md](CUCUMBER.md) para documentación completa.
+
+### Grafana/InfluxDB
+
+Dashboards con métricas en tiempo real:
+
+```bash
+# Inicia Grafana + InfluxDB
+docker-compose up -d
+
+# Ejecuta tests
+python smart_test.py "https://example.com" "Objetivo"
+
+# Envía métricas a Grafana
+python metrics_collector.py
+
+# Accede al dashboard
+# http://localhost:3000
+```
+
+Ver [GRAFANA.md](GRAFANA.md) para documentación completa.
+
+### RAG - Aprendizaje Automático
+
+Smart Test aprende automáticamente de tests anteriores:
+
+```bash
+# Test 1: Guarda patrón en knowledge base
+python smart_test.py "https://github.com" "Testear repo"
+
+# Test 2: RAG busca similares y mejora plan automáticamente
+python smart_test.py "https://gitlab.com" "Testear repo" --rag
+# Result: +7% mejor pass rate sin escribir código nuevo
+```
+
+Usa ChromaDB + OllamaEmbeddings (todo local, sin APIs).
+
+Ver [RAG.md](RAG.md) para documentación completa.
 
 ### Python Script
 
