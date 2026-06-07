@@ -29,7 +29,7 @@ else:
         poolclass=StaticPool
     )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
 Base = declarative_base()
 
 
@@ -299,8 +299,9 @@ class Database:
             domain_obj = session.query(Domain).filter(Domain.domain == domain).first()
             
             if not domain_obj:
-                domain_obj = Domain(domain=domain)
+                domain_obj = Domain(domain=domain, total_tests=0, avg_pass_rate=0.0)
                 session.add(domain_obj)
+                session.flush()
             
             domain_obj.total_tests += 1
             

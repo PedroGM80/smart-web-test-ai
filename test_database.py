@@ -13,19 +13,18 @@ from sqlalchemy.orm import sessionmaker
 
 @pytest.fixture
 def temp_db():
-    """Create temporary database for testing"""
-    db_path = tempfile.mktemp(suffix=".db")
-    os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
-    
+    """Create isolated database for each test"""
     from database import Base, engine as db_engine
+
+    # Recreate all tables fresh for full isolation between tests
+    Base.metadata.drop_all(bind=db_engine)
     Base.metadata.create_all(bind=db_engine)
-    
+
     db = Database()
     yield db
-    
-    # Cleanup
-    if Path(db_path).exists():
-        Path(db_path).unlink()
+
+    # Cleanup after test
+    Base.metadata.drop_all(bind=db_engine)
 
 
 class TestDatabase:
