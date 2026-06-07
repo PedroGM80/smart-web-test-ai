@@ -1,0 +1,80 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode
+.idea
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Data files (rebuild in container)
+__pycache__/
+*.json
+test_history.json
+model_learning.json
+advanced_rag_data.json
+api_results.json
+knowledge/
+*.db
+
+# Reports
+reports/
+screenshots/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Node (if using npm)
+node_modules/
+npm-debug.log
+
+# Docker
+Dockerfile.dev
+docker-compose.override.yml
+
+# Documentation
+.github/
+docs/
+*.md
+README.md
+
+# Development
+.venv/
+venv/
+env/
+ENV/
+
+# OS
+Thumbs.db
+.DS_Store
