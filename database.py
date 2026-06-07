@@ -99,6 +99,19 @@ class Test(Base):
     def __repr__(self):
         return f"<Test(id={self.id}, url={self.url}, pass_rate={self.pass_rate})>"
 
+    def to_dict(self):
+        """Serialize to the dict shape the CLI and exports expect."""
+        return {
+            "timestamp": self.created_at.isoformat() if self.created_at else "",
+            "url": self.url,
+            "objective": self.objective,
+            "pass_rate": self.pass_rate,
+            "duration": self.duration,
+            "mode": self.mode.value if self.mode else None,
+            "model": self.model,
+            "status": self.status.value if self.status else None,
+        }
+
 
 class ModelPerformance(Base):
     """Model performance statistics"""

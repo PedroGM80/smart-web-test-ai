@@ -54,6 +54,18 @@ class TestRepository(BaseRepository):
         with self._session() as session:
             return session.query(Test).limit(limit).offset(offset).all()
 
+    def list_chronological(self):
+        """All tests ordered oldest-first (matches the old JSON append order)."""
+        with self._session() as session:
+            return session.query(Test).order_by(Test.created_at.asc(), Test.id.asc()).all()
+
+    def delete_all(self):
+        """Remove all test records. Returns number of rows deleted."""
+        with self._session() as session:
+            count = session.query(Test).delete()
+            session.commit()
+            return count
+
     def get_by_id(self, test_id):
         with self._session() as session:
             return session.query(Test).filter(Test.id == test_id).first()

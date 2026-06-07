@@ -23,12 +23,20 @@ class CLIEnhancer:
     Advanced CLI commands for Smart Test
     """
     
-    def __init__(self):
+    def __init__(self, repository=None):
         self.config_dir = Path.home() / ".smarttest"
         self.cache_dir = self.config_dir / "cache"
-        self.history_file = self.config_dir / "history.json"
         self.config_dir.mkdir(exist_ok=True)
         self.cache_dir.mkdir(exist_ok=True)
+
+        # History now lives in the database (single source of truth).
+        # The repository can be injected (e.g. tests); otherwise use the
+        # default database, initializing the schema on first use.
+        if repository is not None:
+            self.repository = repository
+        else:
+            from database import init_db
+            self.repository = init_db().tests
     
     # ==================== CONFIG COMMANDS ====================
     
@@ -98,22 +106,16 @@ class CLIEnhancer:
     # ==================== HISTORY COMMANDS ====================
     
     def history_add(self, result: Dict) -> None:
-        """Add result to history"""
-        history = self._load_history()
-        
-        entry = {
-            "timestamp": datetime.now().isoformat(),
-            "url": result.get("url"),
-            "objective": result.get("objective"),
-            "pass_rate": result.get("pass_rate"),
-            "duration": result.get("duration"),
-            "mode": result.get("mode"),
-            "model": result.get("model"),
-            "status": result.get("status")
-        }
-        
-        history.append(entry)
-        self._save_history(history)
+        """Add result to history (persisted in the database)"""
+        self.repository.add(
+            url=result.get("url"),
+            objective=result.get("objective"),
+            pass_rate=result.get("pass_rate"),
+            duration=result.get("duration"),
+            mode=result.get("mode", "balanced"),
+            model=result.get("model"),
+            status=result.get("status", "success"),
+        )
     
     def history_list(self, last_n: int = 10) -> None:
         """
@@ -149,25 +151,12 @@ class CLIEnhancer:
     
     def history_clear(self) -> None:
         """Clear all history"""
-        if self.history_file.exists():
-            self.history_file.unlink()
-            console.print("[green]✅ History cleared[/green]")
+        self.repository.delete_all()
+        console.print("[green]History cleared[/green]")
     
     def _load_history(self) -> List[Dict]:
-        """Load history from file"""
-        if not self.history_file.exists():
-            return []
-        
-        try:
-            with open(self.history_file, 'r') as f:
-                return json.load(f)
-        except:
-            return []
-    
-    def _save_history(self, history: List[Dict]) -> None:
-        """Save history to file"""
-        with open(self.history_file, 'w') as f:
-            json.dump(history, f, indent=2)
+        """Load history from the database as a list of dicts (oldest first)."""
+        return [t.to_dict() for t in self.repository.list_chronological()]
     
     # ==================== COMPARE COMMANDS ====================
     

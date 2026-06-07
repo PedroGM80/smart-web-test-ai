@@ -7,6 +7,8 @@ import json
 import tempfile
 from pathlib import Path
 from cli_enhancements import CLIEnhancer
+from database import Base, create_db_engine, create_session_factory
+from repositories import TestRepository
 
 
 class TestCLIEnhancer:
@@ -14,14 +16,20 @@ class TestCLIEnhancer:
     
     @pytest.fixture
     def cli(self):
-        """Create CLI instance with temp directory"""
+        """Create CLI instance with temp dirs and an isolated in-memory repository"""
+        test_engine = create_db_engine("sqlite:///:memory:")
+        Base.metadata.create_all(bind=test_engine)
+        repo = TestRepository(create_session_factory(test_engine))
+
         with tempfile.TemporaryDirectory() as tmpdir:
-            cli = CLIEnhancer()
+            cli = CLIEnhancer(repository=repo)
             cli.config_dir = Path(tmpdir)
             cli.cache_dir = cli.config_dir / "cache"
-            cli.history_file = cli.config_dir / "history.json"
             cli.cache_dir.mkdir(exist_ok=True)
             yield cli
+
+        Base.metadata.drop_all(bind=test_engine)
+        test_engine.dispose()
     
     # ==================== CONFIG TESTS ====================
     
@@ -82,7 +90,7 @@ class TestCLIEnhancer:
         
         cli.history_add(result)
         
-        assert cli.history_file.exists()
+        assert len(cli._load_history()) == 1
     
     def test_history_load_and_add(self, cli):
         """Test loading history after adding"""
@@ -123,11 +131,11 @@ class TestCLIEnhancer:
         result = {"url": "https://github.com", "pass_rate": 95.0}
         cli.history_add(result)
         
-        assert cli.history_file.exists()
+        assert len(cli._load_history()) == 1
         
         cli.history_clear()
         
-        assert not cli.history_file.exists()
+        assert len(cli._load_history()) == 0
     
     # ==================== COMPARE TESTS ====================
     
