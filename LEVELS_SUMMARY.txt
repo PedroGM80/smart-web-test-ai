@@ -1,0 +1,201 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║               SMART TEST - MODEL SELECTOR (5 NIVELES)                      ║
+║                    De Más Fácil a Más Difícil                             ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ NIVEL 1: BÁSICO (10 min) - Selector Simple                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Archivo:  model_selector.py                                                │
+│ Uso:      python smart_test.py --optimize speed/balanced/quality          │
+│ Función:  Elige modelo por modo preestablecido                             │
+│                                                                              │
+│ Ejemplo:                                                                    │
+│   selector = ModelSelector(mode="speed")                                   │
+│   model = selector.select("planning")  # "orca-mini"                       │
+│                                                                              │
+│ Modos:                                                                      │
+│   speed    → Rápido (neural-chat + orca-mini)                             │
+│   balanced → Equilibrado (neural-chat + mistral) [default]               │
+│   quality  → Calidad (mistral + mistral)                                  │
+│                                                                              │
+│ Dificultad: ⭐                                                              │
+│ Valor:     7/10                                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ NIVEL 2: INTERMEDIO (15 min) - CLI Mejorado + Interactivo                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Archivo:  smart_test.py (actualizado)                                     │
+│ Uso:      python smart_test.py --select-models                            │
+│           python smart_test.py --show-models                              │
+│ Función:  Selector interactivo + visualización de configuración            │
+│                                                                              │
+│ Nuevos flags:                                                               │
+│   --select-models    Pregunta por cada modelo (interactivo)               │
+│   --show-models      Muestra configuración actual (tabla bonita)          │
+│   --optimize {mode}  Selecciona modo (speed/balanced/quality)            │
+│                                                                              │
+│ Ejemplo:                                                                    │
+│   $ python smart_test.py --select-models                                  │
+│   Modelo para analysis? neural-chat                                        │
+│   Modelo para planning? mistral                                            │
+│   Modelo para vision? llava                                                │
+│   ✓ Configuración lista                                                    │
+│                                                                              │
+│ Dificultad: ⭐⭐                                                             │
+│ Valor:     8/10                                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ NIVEL 3: AVANZADO (20 min) - Auto-Detección                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Archivo:  model_detector.py                                                │
+│ Uso:      detector = ModelDetector()                                       │
+│           available = detector.get_available_models()                      │
+│           detector.suggest_setup()                                         │
+│ Función:  Detecta qué modelos tienes y sugiere configuración óptima       │
+│                                                                              │
+│ Características:                                                             │
+│   ✓ Detecta modelos descargados automáticamente                           │
+│   ✓ Sugiere configuración óptima                                          │
+│   ✓ Descarga modelos faltantes                                            │
+│   ✓ No falla si faltan modelos                                            │
+│                                                                              │
+│ Ejemplo:                                                                    │
+│   $ python model_detector.py                                               │
+│   Modelos disponibles (4):                                                 │
+│     ✓ mistral                                                              │
+│     ✓ neural-chat                                                          │
+│     ✓ llava                                                                │
+│     ✗ dolphin-mixtral                                                      │
+│                                                                              │
+│   Configuración sugerida:                                                   │
+│     analysis → neural-chat (rápido)                                        │
+│     planning → mistral (mejor razonamiento)                                │
+│     vision → llava (disponible)                                            │
+│                                                                              │
+│ Dificultad: ⭐⭐⭐                                                            │
+│ Valor:     9/10                                                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ NIVEL 4: EXPERTO (25 min) - Benchmarking                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Archivo:  model_benchmarker.py                                             │
+│ Uso:      benchmarker = ModelBenchmarker()                                 │
+│           benchmarker.benchmark_models()                                   │
+│           benchmarker.show_results()                                       │
+│           benchmarker.recommend()                                          │
+│ Función:  Compara rendimiento real de modelos                             │
+│                                                                              │
+│ Métricas:                                                                   │
+│   • Tiempo de ejecución (segundos)                                         │
+│   • Tokens generados                                                       │
+│   • Tokens por segundo (throughput)                                        │
+│   • Tasa de éxito                                                          │
+│                                                                              │
+│ Ejemplo:                                                                    │
+│   $ python model_benchmarker.py                                            │
+│   Benchmarking 3 modelos...                                                │
+│                                                                              │
+│   ANÁLISIS:                                                                 │
+│   Modelo          Tiempo(s)  Tokens/s                                      │
+│   mistral         5.2        42.3                                          │
+│   neural-chat     3.1        51.5 ← Más rápido                            │
+│   orca-mini       2.1        38.9                                          │
+│                                                                              │
+│   RECOMENDACIONES:                                                          │
+│   Para velocidad:    neural-chat                                           │
+│   Para calidad:      mistral                                               │
+│   Para razonamiento: dolphin-mixtral                                       │
+│                                                                              │
+│ Dificultad: ⭐⭐⭐⭐                                                           │
+│ Valor:     9.5/10                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ NIVEL 5: MÁXIMO (30 min) - Learning Automático                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ Archivo:  model_learner.py                                                 │
+│ Uso:      learner = ModelLearner()                                         │
+│           learner.record_result(url, model, task, duration, success)      │
+│           best = learner.recommend_model(url, task, optimize="quality")   │
+│           learner.print_stats()                                            │
+│ Función:  El sistema APRENDE qué modelo es mejor con cada test             │
+│                                                                              │
+│ Cómo funciona:                                                              │
+│   1. Durante tests, registra resultados                                    │
+│   2. Almacena datos históricos en model_learning.json                     │
+│   3. Analiza: éxito, velocidad, tokens por dominio y tarea                │
+│   4. Recomienda automáticamente el mejor modelo                            │
+│                                                                              │
+│ Ejemplo:                                                                    │
+│   Test 1: GitHub + mistral = 5.2s, 450 tokens, ✓ éxito                   │
+│   Test 2: GitHub + neural-chat = 3.1s, 380 tokens, ✓ éxito               │
+│   Test 3: GitHub + mistral = 5.0s, 460 tokens, ✓ éxito                   │
+│                                                                              │
+│   Learning:                                                                 │
+│     github.com + analysis → mistral (mejor histórico)                     │
+│     github.com + planning → mistral (mejor histórico)                     │
+│                                                                              │
+│   Test 4: GitHub + ? → Recomienda: mistral (basado en histórico)          │
+│                                                                              │
+│ Datos guardados (model_learning.json):                                     │
+│   {                                                                         │
+│     "by_domain": {                                                          │
+│       "github.com": {                                                       │
+│         "mistral": {                                                        │
+│           "runs": 10,                                                       │
+│           "successes": 9,                                                   │
+│           "total_time": 52.5                                               │
+│         }                                                                   │
+│       }                                                                     │
+│     }                                                                       │
+│   }                                                                         │
+│                                                                              │
+│ Aplicaciones:                                                               │
+│   ✓ Testing en múltiples dominios (GitHub, Amazon, etc.)                   │
+│   ✓ Optimización continua                                                  │
+│   ✓ Predicción: "¿Cuál es el mejor modelo para X dominio?"                │
+│   ✓ ROI: Menos tiempo, más tests, mejor quality                           │
+│                                                                              │
+│ Dificultad: ⭐⭐⭐⭐⭐                                                          │
+│ Valor:     10/10                                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                          COMPARATIVA RÁPIDA                               ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║ Nivel  │ Uso            │ Líneas  │ Complejidad  │ Valor  │ Producción │
+║────────┼────────────────┼─────────┼──────────────┼────────┼────────────┤
+║   1    │ Básico         │  150    │ ⭐           │ 7/10   │ ✓ Sí       │
+║   2    │ CLI interactivo│  200    │ ⭐⭐          │ 8/10   │ ✓ Sí       │
+║   3    │ Auto-detecta   │  250    │ ⭐⭐⭐         │ 9/10   │ ✓ Sí       │
+║   4    │ Benchmarking   │  300    │ ⭐⭐⭐⭐       │ 9.5/10 │ ✓ Sí       │
+║   5    │ Learning auto  │  350    │ ⭐⭐⭐⭐⭐     │ 10/10  │ ✓ Sí       │
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                     CÓMO EMPEZAR (RECOMENDADO)                            ║
+╠════════════════════════════════════════════════════════════════════════════╣
+║                                                                            ║
+║ Paso 1: NIVEL 1 (10 min)                                                  ║
+║   python smart_test.py "https://github.com" "test" --optimize balanced   ║
+║                                                                            ║
+║ Paso 2: NIVEL 2 (5 min)                                                   ║
+║   python smart_test.py --show-models                                      ║
+║                                                                            ║
+║ Paso 3: NIVEL 3 (5 min)                                                   ║
+║   python model_detector.py                                                ║
+║                                                                            ║
+║ Paso 4: NIVEL 4 (30 min, toma café ☕)                                    ║
+║   python model_benchmarker.py                                             ║
+║                                                                            ║
+║ Paso 5: NIVEL 5 (Automático después)                                      ║
+║   python smart_test.py --url "..." --use-learning                         ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
