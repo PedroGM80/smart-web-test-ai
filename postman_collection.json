@@ -1,0 +1,348 @@
+{
+  "info": {
+    "_postman_id": "smart-test-api-collection",
+    "name": "Smart Test API",
+    "description": "Collection para testing de Smart Test REST API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Verifica que la API está saludable"
+          },
+          "response": []
+        },
+        {
+          "name": "Root Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Información general de la API"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Models",
+      "item": [
+        {
+          "name": "Get Models - Speed",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/models?mode=speed",
+              "host": ["{{base_url}}"],
+              "path": ["models"],
+              "query": [
+                {
+                  "key": "mode",
+                  "value": "speed"
+                }
+              ]
+            },
+            "description": "Obtiene modelos para modo speed"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Models - Balanced",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/models?mode=balanced",
+              "host": ["{{base_url}}"],
+              "path": ["models"],
+              "query": [
+                {
+                  "key": "mode",
+                  "value": "balanced"
+                }
+              ]
+            },
+            "description": "Obtiene modelos para modo balanced (default)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Models - Quality",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/models?mode=quality",
+              "host": ["{{base_url}}"],
+              "path": ["models"],
+              "query": [
+                {
+                  "key": "mode",
+                  "value": "quality"
+                }
+              ]
+            },
+            "description": "Obtiene modelos para modo quality"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tests",
+      "item": [
+        {
+          "name": "Execute Test - GitHub",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://github.com\",\n  \"objective\": \"Testear repositorio principal\",\n  \"mode\": \"balanced\",\n  \"generate_cucumber\": false,\n  \"use_rag\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test",
+              "host": ["{{base_url}}"],
+              "path": ["test"]
+            },
+            "description": "Ejecuta un test en GitHub"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Test - Speed Mode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://example.com\",\n  \"objective\": \"Test rápido de página\",\n  \"mode\": \"speed\",\n  \"generate_cucumber\": false,\n  \"use_rag\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test",
+              "host": ["{{base_url}}"],
+              "path": ["test"]
+            },
+            "description": "Ejecuta un test rápido (modo speed)"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Test - Quality Mode",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://github.com\",\n  \"objective\": \"Test exhaustivo con máxima calidad\",\n  \"mode\": \"quality\",\n  \"generate_cucumber\": true,\n  \"use_rag\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test",
+              "host": ["{{base_url}}"],
+              "path": ["test"]
+            },
+            "description": "Ejecuta un test con máxima calidad (modo quality) y genera Cucumber"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Test - LinkedIn",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://www.linkedin.com\",\n  \"objective\": \"Testear login y feed\",\n  \"mode\": \"balanced\",\n  \"generate_cucumber\": true,\n  \"use_rag\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test",
+              "host": ["{{base_url}}"],
+              "path": ["test"]
+            },
+            "description": "Ejecuta un test en LinkedIn con generación de feature files"
+          },
+          "response": []
+        },
+        {
+          "name": "Execute Test - Amazon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://www.amazon.com\",\n  \"objective\": \"Testear búsqueda y carrito\",\n  \"mode\": \"balanced\",\n  \"generate_cucumber\": false,\n  \"use_rag\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/test",
+              "host": ["{{base_url}}"],
+              "path": ["test"]
+            },
+            "description": "Ejecuta un test en Amazon"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Results",
+      "item": [
+        {
+          "name": "Get All Results",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/results?limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["results"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Obtiene los últimos 10 resultados"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Results - Limit 5",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/results?limit=5",
+              "host": ["{{base_url}}"],
+              "path": ["results"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Obtiene los últimos 5 resultados"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Results - All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/results?limit=100",
+              "host": ["{{base_url}}"],
+              "path": ["results"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "100"
+                }
+              ]
+            },
+            "description": "Obtiene todos los resultados (hasta 100)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Result - #0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/results/0",
+              "host": ["{{base_url}}"],
+              "path": ["results", "0"]
+            },
+            "description": "Obtiene el primer resultado"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Result - #1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/results/1",
+              "host": ["{{base_url}}"],
+              "path": ["results", "1"]
+            },
+            "description": "Obtiene el segundo resultado"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Statistics",
+      "item": [
+        {
+          "name": "Get Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/stats",
+              "host": ["{{base_url}}"],
+              "path": ["stats"]
+            },
+            "description": "Obtiene estadísticas agregadas de todos los tests"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ]
+}
