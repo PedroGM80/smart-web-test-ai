@@ -8,8 +8,15 @@ import os
 from pathlib import Path
 from datetime import datetime
 from typing import Dict
-from influxdb_client import InfluxDBClient, Point
-from influxdb_client.client.write_api import SYNCHRONOUS
+# InfluxDB client is only needed to actually send metrics. Import defensively
+# so report parsing / pass-rate logic can be imported and tested without it.
+try:
+    from influxdb_client import InfluxDBClient, Point
+    from influxdb_client.client.write_api import SYNCHRONOUS
+except ImportError:
+    InfluxDBClient = None
+    Point = None
+    SYNCHRONOUS = None
 from rich.console import Console
 
 console = Console()
@@ -39,6 +46,8 @@ class MetricsCollector:
         self.token = influxdb_token
         
         try:
+            if InfluxDBClient is None:
+                raise ImportError("influxdb_client not installed")
             self.client = InfluxDBClient(
                 url=self.url,
                 org=self.org,
