@@ -71,8 +71,8 @@ class AdvancedRAG:
         """
         stats = self.learner.get_stats()
         
-        if len(stats["domains_learned"]) < 3:
-            console.print("[yellow]⚠ Necesitas al menos 3 dominios para clustering[/yellow]")
+        if stats["domains_learned"] < 3:
+            console.print("[yellow]Necesitas al menos 3 dominios para clustering[/yellow]")
             return {}
         
         # Extrae features
