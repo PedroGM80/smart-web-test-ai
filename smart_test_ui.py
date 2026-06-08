@@ -88,7 +88,6 @@ with st.sidebar.expander("📈 Estadísticas Learning"):
     st.metric("Dominios analizados", stats["domains_learned"])
     st.metric("Tareas aprendidas", stats["tasks_learned"])
 
----
 
 # MAIN CONTENT
 st.title("🤖 Smart Test - IA Testing")
@@ -129,7 +128,6 @@ with col2:
 with col3:
     history_button = st.button("📜 Historial", use_container_width=True)
 
----
 
 # DEMO Mode
 if demo_button:
@@ -208,7 +206,6 @@ if demo_button:
         st.write("- Verificar que JavaScript se ejecuta correctamente")
         st.write("- Considerar usar wait explícito en lugar de implícito")
 
----
 
 # EXECUTE Test
 if execute_button:
@@ -267,22 +264,17 @@ if execute_button:
             with col4:
                 st.metric("Tiempo", f"{report.get('duration', 42)}s", "")
             
-            # Guardar en historia
-            history_file = Path("test_history.json")
-            history = []
-            if history_file.exists():
-                history = json.loads(history_file.read_text())
-            
-            history.append({
-                "timestamp": datetime.now().isoformat(),
-                "url": url,
-                "objective": objective,
-                "pass_rate": report.get('pass_rate', 85),
-                "duration": report.get('duration', 0),
-                "model_mode": mode
-            })
-            
-            history_file.write_text(json.dumps(history, indent=2))
+            # Guardar en historial (base de datos, fuente única)
+            from database import init_db
+            init_db().tests.add(
+                url=url,
+                objective=objective,
+                pass_rate=report.get('pass_rate', 0),
+                duration=report.get('duration', 0),
+                mode=mode,
+                model=report.get('model', 'unknown'),
+                status=report.get('status', 'success'),
+            )
             
             st.success("✓ Test guardado en historial")
         
@@ -290,16 +282,14 @@ if execute_button:
             st.error(f"❌ Error: {str(e)}")
             st.info("Verifica que Ollama está ejecutándose: `ollama serve`")
 
----
 
 # HISTORY
 if history_button:
     st.subheader("📜 Historial de Tests")
     
-    history_file = Path("test_history.json")
-    if history_file.exists():
-        history = json.loads(history_file.read_text())
-        
+    from database import init_db
+    history = [t.to_dict() for t in init_db().tests.list_chronological()]
+    if history:
         if history:
             # Tabla
             st.dataframe(
@@ -309,7 +299,7 @@ if history_button:
                         "URL": h["url"][:40] + "..." if len(h["url"]) > 40 else h["url"],
                         "Pass Rate": f"{h['pass_rate']:.1f}%",
                         "Duración": f"{h['duration']}s",
-                        "Modo": h["model_mode"]
+                        "Modo": h["mode"]
                     }
                     for h in history[-10:]  # Últimos 10
                 ],
@@ -333,7 +323,6 @@ if history_button:
     else:
         st.info("📭 Sin historial")
 
----
 
 # FOOTER
 st.divider()
