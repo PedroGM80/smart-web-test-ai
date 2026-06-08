@@ -15,18 +15,20 @@ class DashboardAnalytics:
     Genera estadísticas para dashboard
     """
     
-    def __init__(self):
-        self.results_file = Path("api_results.json")
+    def __init__(self, repository=None):
+        # Test results now come from the database (single source of truth).
+        # Repository can be injected; otherwise the default database is used.
+        if repository is not None:
+            self.repository = repository
+        else:
+            from database import init_db
+            self.repository = init_db().tests
+        # Model-learning data keeps its own store (different nature of data)
         self.learning_file = Path("model_learning.json")
     
     def load_results(self) -> List[Dict]:
-        """Carga resultados de tests"""
-        if self.results_file.exists():
-            try:
-                return json.loads(self.results_file.read_text())
-            except:
-                return []
-        return []
+        """Carga resultados de tests desde la base de datos"""
+        return [t.to_dict() for t in self.repository.list_chronological()]
     
     def load_learning(self) -> Dict:
         """Carga datos de learning"""
