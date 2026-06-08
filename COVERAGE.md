@@ -8,7 +8,7 @@ python -m pytest --cov=. --cov-report=term-missing
 
 ## Current state
 
-Total: **52%** measured (110 tests passing).
+Total: **58%** measured (121 tests passing).
 
 ### Covered
 | Module | Coverage |
@@ -19,6 +19,8 @@ Total: **52%** measured (110 tests passing).
 | dashboard_analytics.py | 81% |
 | cucumber_generator.py | 65% |
 | api.py | 62% |
+| model_learner.py | 59% |
+| advanced_rag.py | 58% |
 | metrics_collector.py | 47% |
 | email_reports.py | 45% |
 | model_detector.py | 44% |
@@ -30,16 +32,18 @@ Total: **52%** measured (110 tests passing).
 | smart_test.py | 22% (persist_report tested; CLI wiring not) |
 
 ### Not covered (0%)
-RAG / model-learning modules, whose logic is coupled to ChromaDB and Ollama
-embeddings and is harder to unit-test without those services:
+Core logic is coupled to external services (ChromaDB, Ollama) and belongs in
+integration tests, not mocked unit tests:
 
-advanced_rag, knowledge_base, model_benchmarker, model_learner, rag_optimizer.
+knowledge_base, model_benchmarker, rag_optimizer.
 
 ## Notes
 
 - Earlier docs claimed "95%+ coverage"; that was never measured. This file is
   the source of truth.
-- Several modules import heavy optional stacks (LangChain, Playwright,
-  influxdb_client) defensively, so they can be imported and unit tested
-  without those services installed.
+- Heavy optional stacks (LangChain, Playwright, influxdb_client) are imported
+  defensively, so modules can be imported and unit tested without them.
 - Integration modules (slack/email/github) are tested with mocked HTTP/SMTP.
+- Two real bugs were found and fixed by adding these tests:
+  the agent report contract (placeholder pass_rate/duration) and
+  AdvancedRAG.cluster_domains (TypeError on every call).
