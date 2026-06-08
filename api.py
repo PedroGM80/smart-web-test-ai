@@ -3,14 +3,27 @@ Smart Test API - FastAPI
 Endpoint REST para ejecutar tests programáticamente
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends
 from pydantic import BaseModel
 from typing import Optional
-import json
 from datetime import datetime
 from pathlib import Path
-from agent import SmartTestAgent
-from model_selector import ModelSelector
+
+# The heavy AI stack (Ollama/LangChain via agent) is only needed to actually
+# run a test. Import it defensively so the API can be imported, served and
+# tested even when that stack isn't installed.
+try:
+    from agent import SmartTestAgent
+except ImportError:
+    SmartTestAgent = None
+
+try:
+    from model_selector import ModelSelector
+except ImportError:
+    ModelSelector = None
+
+from database import init_db
+from stats_service import StatsService
 
 # Modelos Pydantic
 class TestRequest(BaseModel):
@@ -41,21 +54,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Almacenamiento en memoria (usar DB en producción)
-results_file = Path("api_results.json")
 
-def load_results() -> list:
-    """Carga resultados guardados"""
-    if results_file.exists():
-        try:
-            return json.loads(results_file.read_text())
-        except:
-            return []
-    return []
+# Persistence is the database (same source of truth as the CLI).
+# The repository is provided via dependency injection so tests can override it.
+_db = None
 
-def save_results(results: list) -> None:
-    """Guarda resultados"""
-    results_file.write_text(json.dumps(results, indent=2))
+def get_repository():
+    """FastAPI dependency returning the TestRepository."""
+    global _db
+    if _db is None:
+        _db = init_db()
+    return _db.tests
 
 @app.get("/")
 async def root():
@@ -98,7 +107,7 @@ async def get_models(mode: str = "balanced"):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/test", response_model=TestResult)
-async def execute_test(request: TestRequest):
+async def execute_test(request: TestRequest, repo=Depends(get_repository)):
     """
     Ejecuta un test
     
@@ -153,62 +162,65 @@ async def execute_test(request: TestRequest):
             mode=request.mode
         )
         
-        # Guarda resultado
-        results = load_results()
-        results.append(result.dict())
-        save_results(results)
+        # Persiste en la base de datos
+        repo.add(
+            url=result.url,
+            objective=result.objective,
+            pass_rate=result.pass_rate,
+            duration=result.duration,
+            mode=result.mode,
+            model=selector.select("analysis"),
+            status=result.status,
+        )
         
         return result
     
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/results")
-async def get_results(limit: int = 10):
+async def get_results(limit: int = 10, repo=Depends(get_repository)):
     """Obtiene últimos resultados"""
-    results = load_results()
+    history = [t.to_dict() for t in repo.list_chronological()]
     return {
-        "total": len(results),
+        "total": len(history),
         "limit": limit,
-        "results": results[-limit:]
+        "results": history[-limit:]
     }
 
-@app.get("/results/{index}")
-async def get_result(index: int):
-    """Obtiene un resultado específico"""
-    results = load_results()
-    if index < 0 or index >= len(results):
+@app.get("/results/{test_id}")
+async def get_result(test_id: int, repo=Depends(get_repository)):
+    """Obtiene un resultado específico por ID"""
+    test = repo.get_by_id(test_id)
+    if test is None:
         raise HTTPException(status_code=404, detail="Result not found")
-    return results[index]
+    return test.to_dict()
 
 @app.get("/stats")
-async def get_stats():
+async def get_stats(repo=Depends(get_repository)):
     """Estadísticas de tests"""
-    results = load_results()
-    
-    if not results:
-        return {
-            "total_tests": 0,
-            "avg_pass_rate": 0,
-            "avg_duration": 0,
-            "by_mode": {}
-        }
-    
-    pass_rates = [r.get("pass_rate", 0) for r in results]
-    durations = [r.get("duration", 0) for r in results]
-    
+    history = [t.to_dict() for t in repo.list_chronological()]
+
+    summary = StatsService.summarize(
+        pass_rates=[r.get("pass_rate", 0) for r in history],
+        durations=[r.get("duration", 0) for r in history],
+        statuses=[r.get("status", "") for r in history],
+    )
+
     # Agrupar por modo
     by_mode = {}
-    for result in results:
+    for result in history:
         mode = result.get("mode", "unknown")
         if mode not in by_mode:
-            by_mode[mode] = {"count": 0, "avg_pass_rate": 0}
+            by_mode[mode] = {"count": 0}
         by_mode[mode]["count"] += 1
-    
+
     return {
-        "total_tests": len(results),
-        "avg_pass_rate": sum(pass_rates) / len(pass_rates),
-        "avg_duration": sum(durations) / len(durations),
+        "total_tests": summary["total_tests"],
+        "avg_pass_rate": summary["avg_pass_rate"],
+        "avg_duration": summary["avg_duration"],
         "by_mode": by_mode
     }
 
