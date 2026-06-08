@@ -2,6 +2,10 @@
 
 Detailed sprint breakdown from v1.4 to v2.0
 
+> **Status: speculative plan, not a commitment or a record of fact.**
+> Timelines, hour estimates and coverage targets here are planning
+> assumptions, not achieved results. Measured coverage lives in COVERAGE.md.
+
 ---
 
 ## 📋 SPRINT OVERVIEW
