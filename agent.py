@@ -6,12 +6,16 @@ Usa Ollama + Playwright para testing inteligente sin código
 import os
 import base64
 import json
+import time
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
 from playwright.sync_api import sync_playwright, Page
-from langchain_ollama import OllamaLLM
+try:
+    from langchain_ollama import OllamaLLM
+except ImportError:
+    OllamaLLM = None
 from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
@@ -283,6 +287,7 @@ Da un veredicto claro: PASÓ o FALLÓ, con razones.
         """
         
         self.test_results = []
+        start_time = time.time()
         
         console.print(Panel(
             f"URL: {url}\nObjetivo: {objectives}",
@@ -314,16 +319,31 @@ Da un veredicto claro: PASÓ o FALLÓ, con razones.
                 
                 browser.close()
                 
+                # Métricas derivadas del resultado de ejecución
+                total = execution_results.get("total", 0)
+                passed = execution_results.get("passed", 0)
+                failed = execution_results.get("failed", 0)
+                pass_rate = (passed / total * 100) if total else 0.0
+                duration = time.time() - start_time
+                
                 # Reporte final
                 report = {
                     "url": url,
                     "objectives": objectives,
+                    "objective": objectives,
                     "plan": plan,
                     "actions_total": len(actions),
                     "execution": execution_results,
                     "validation": validation,
                     "results_log": self.test_results,
-                    "timestamp": datetime.now().isoformat()
+                    "timestamp": datetime.now().isoformat(),
+                    # Contract consumed by the API, CLI and UI
+                    "status": "success" if failed == 0 else "failure",
+                    "pass_rate": round(pass_rate, 1),
+                    "duration": round(duration, 1),
+                    "total_actions": total,
+                    "passed_actions": passed,
+                    "failed_actions": failed,
                 }
                 
                 # Genera Cucumber features si se solicita
