@@ -2,6 +2,12 @@
 
 Production roadmap from v1.3 (June 2026) to v2.0 (December 2026)
 
+> **Status: speculative plan, not a commitment or a record of fact.**
+> Dates, effort estimates, pricing, revenue figures and adoption metrics in
+> this document are illustrative planning assumptions only. They are not
+> achieved results, not promises, and not based on real data. For the actual
+> measured state of the project see COVERAGE.md and the test suite.
+
 ---
 
 ## 🎯 Vision 2026
@@ -563,23 +569,23 @@ Weeks 11-12:
 ## 📊 Success Metrics
 
 ### By v1.5 (July 2026)
-- ✅ 100 GitHub stars
-- ✅ 500 downloads
-- ✅ 5 active contributors
+- Target: 100 GitHub stars
+- Target: 500 downloads
+- Target: 5 active contributors
 - ✅ 0 critical bugs
 
 ### By v1.7 (August 2026)
-- ✅ 250 GitHub stars
-- ✅ 2,000 downloads
-- ✅ Featured in Product Hunt top 10
-- ✅ 10 active contributors
+- Target: 250 GitHub stars
+- Target: 2,000 downloads
+- Target: Featured in Product Hunt top 10
+- Target: 10 active contributors
 
 ### By v2.0 (December 2026)
-- ✅ 500 GitHub stars
-- ✅ 10,000 downloads
-- ✅ 50+ paying users (Pro/Team)
-- ✅ 3+ enterprise trials
-- ✅ 20 active contributors
+- Target: 500 GitHub stars
+- Target: 10,000 downloads
+- Target: 50+ paying users (Pro/Team)
+- Target: 3+ enterprise trials
+- Target: 20 active contributors
 
 ---
 
