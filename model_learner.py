@@ -8,7 +8,10 @@ import time
 from typing import Dict, List, Tuple
 from pathlib import Path
 from model_selector import ModelSelector
-from langchain_ollama import OllamaLLM
+try:
+    from langchain_ollama import OllamaLLM
+except ImportError:
+    OllamaLLM = None
 from rich.console import Console
 
 console = Console()
