@@ -105,5 +105,35 @@ class TestImports:
             pytest.skip("Requires agent module")
 
 
+class TestPersistReport:
+    """persist_report stores a run through the repository"""
+
+    def _repo(self):
+        from database import Base, create_db_engine, create_session_factory
+        from repositories import TestRepository
+        engine = create_db_engine("sqlite:///:memory:")
+        Base.metadata.create_all(bind=engine)
+        return TestRepository(create_session_factory(engine))
+
+    def test_persist_writes_to_repository(self):
+        from smart_test import persist_report
+        repo = self._repo()
+        report = {"pass_rate": 88.0, "duration": 15.0, "status": "success"}
+        persist_report(repo, url="https://x.com", objective="o", model="mistral", report=report)
+
+        stored = repo.list_chronological()
+        assert len(stored) == 1
+        assert stored[0].url == "https://x.com"
+        assert stored[0].pass_rate == 88.0
+
+    def test_persist_handles_missing_fields(self):
+        from smart_test import persist_report
+        repo = self._repo()
+        persist_report(repo, url="https://y.com", objective="o", model="mistral", report={})
+        stored = repo.list_chronological()
+        assert len(stored) == 1
+        assert stored[0].pass_rate == 0.0
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

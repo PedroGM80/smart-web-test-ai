@@ -4,7 +4,6 @@ Nivel 1: Básico - Selector simple
 """
 
 from typing import Optional, Dict
-from langchain_ollama import OllamaLLM
 
 
 class ModelSelector:
@@ -83,7 +82,7 @@ class ModelSelector:
         """
         self.config[task] = model
     
-    def get_llm(self, task: str) -> OllamaLLM:
+    def get_llm(self, task: str):
         """
         Obtiene instancia de LLM para una tarea
         
@@ -97,6 +96,7 @@ class ModelSelector:
         
         # Cache para evitar crear múltiples instancias
         if model_name not in self.llms:
+            from langchain_ollama import OllamaLLM
             self.llms[model_name] = OllamaLLM(model=model_name)
         
         return self.llms[model_name]

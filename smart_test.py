@@ -6,10 +6,34 @@ Uso: python smart_test.py <url> <objective> [--headed]
 
 import sys
 import argparse
-from agent import SmartTestAgent
 from rich.console import Console
 
+# The AI agent (Ollama/LangChain) is only needed to actually run a test.
+# Import defensively so the module (and persist_report) can be imported and
+# tested without that stack installed.
+try:
+    from agent import SmartTestAgent
+except ImportError:
+    SmartTestAgent = None
+
 console = Console()
+
+
+def persist_report(repository, *, url, objective, model, report):
+    """Persist a test report through the repository.
+
+    Extracted from main() so it can be tested without the AI agent. Failures
+    are swallowed by the caller: persistence must never break a test run.
+    """
+    return repository.add(
+        url=url,
+        objective=objective,
+        pass_rate=report.get("pass_rate", 0.0),
+        duration=report.get("duration", 0.0),
+        mode=report.get("mode", "balanced"),
+        model=model,
+        status=report.get("status", "success"),
+    )
 
 
 def main():
@@ -55,6 +79,9 @@ Ejemplos:
         sys.exit(1)
     
     try:
+        if SmartTestAgent is None:
+            console.print("[red]Error: el agente no está disponible (falta el stack de IA)[/red]")
+            sys.exit(1)
         agent = SmartTestAgent(model=args.model, vision_model=args.vision_model)
         
         console.print("[bold blue]🤖 Smart Web Test - IA Local[/bold blue]")
@@ -68,6 +95,20 @@ Ejemplos:
             headless=not args.headed,
             generate_cucumber=args.cucumber
         )
+        
+        # Persist the result so CLI history, the dashboard and the API all
+        # see this run. Never let persistence failure break the test run.
+        try:
+            from database import init_db
+            persist_report(
+                init_db().tests,
+                url=args.url,
+                objective=args.objective,
+                model=args.model,
+                report=report or {},
+            )
+        except Exception as e:
+            console.print(f"[yellow]Aviso: no se pudo guardar el resultado ({e})[/yellow]")
         
         sys.exit(0)
     
