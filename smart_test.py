@@ -70,6 +70,11 @@ Ejemplos:
         action="store_true",
         help="Generar feature files de Cucumber/Gherkin"
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Ejecutar el flujo con un agente simulado (sin Ollama ni navegador)"
+    )
     
     args = parser.parse_args()
     
@@ -79,12 +84,16 @@ Ejemplos:
         sys.exit(1)
     
     try:
-        if SmartTestAgent is None:
-            console.print("[red]Error: el agente no está disponible (falta el stack de IA)[/red]")
+        if args.dry_run:
+            from fake_agent import FakeAgent
+            agent = FakeAgent(model=args.model, vision_model=args.vision_model)
+            console.print("[bold yellow]Smart Web Test - DRY RUN (agente simulado)[/bold yellow]")
+        elif SmartTestAgent is None:
+            console.print("[red]Error: el agente no está disponible (falta el stack de IA). Usa --dry-run para probar el flujo.[/red]")
             sys.exit(1)
-        agent = SmartTestAgent(model=args.model, vision_model=args.vision_model)
-        
-        console.print("[bold blue]🤖 Smart Web Test - IA Local[/bold blue]")
+        else:
+            agent = SmartTestAgent(model=args.model, vision_model=args.vision_model)
+            console.print("[bold blue]🤖 Smart Web Test - IA Local[/bold blue]")
         console.print(f"URL: {args.url}")
         console.print(f"Objetivo: {args.objective}")
         console.print(f"Modelos: {args.model} + {args.vision_model}\n")
