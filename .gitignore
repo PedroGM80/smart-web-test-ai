@@ -55,3 +55,8 @@ Thumbs.db
 # Local test database
 *.db
 smarttest.db
+
+# Packaging artifacts
+*.egg-info/
+build/
+dist/
