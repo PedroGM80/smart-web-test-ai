@@ -57,3 +57,11 @@ def test_get_recommendations_returns_list(rag):
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+def test_get_recommendations_with_clusters_does_not_crash(rag):
+    # Regression: this path referenced an undefined 'stats' (NameError) when
+    # clusters existed and the domain was unknown.
+    _populate(rag, ["a.com", "b.com", "c.com", "d.com"])
+    recs = rag.get_recommendations("https://never-seen-domain.com", "test")
+    assert isinstance(recs, list)

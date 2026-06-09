@@ -264,6 +264,7 @@ class AdvancedRAG:
         """
         recommendations = []
         domain = urlparse(url).netloc
+        stats = self.learner.get_stats()
         
         # Predice defectos
         defects = self.predict_defects(url, objective)
