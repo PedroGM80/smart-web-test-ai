@@ -1,17 +1,11 @@
 # Smart Web Test - IA Local para Testing Web
 
-[![Build Status](https://github.com/PedroGM80/smart-web-test-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/PedroGM80/smart-web-test-ai/actions)
+[![Tests](https://github.com/PedroGM80/smart-web-test-ai/actions/workflows/tests.yml/badge.svg)](https://github.com/PedroGM80/smart-web-test-ai/actions)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![GitHub Stars](https://img.shields.io/github/stars/PedroGM80/smart-web-test-ai.svg?style=social)](https://github.com/PedroGM80/smart-web-test-ai)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Ollama Required](https://img.shields.io/badge/requires-Ollama-FF6B00.svg)](https://ollama.ai)
-[![FastAPI](https://img.shields.io/badge/API-FastAPI-009688.svg)](https://fastapi.tiangolo.com/)
-[![Streamlit](https://img.shields.io/badge/UI-Streamlit-FF4B4B.svg)](https://streamlit.io/)
+[![Coverage](https://img.shields.io/badge/coverage-58%25%20measured-yellow.svg)](COVERAGE.md)
 
 Testing web automático usando **IA local** (Ollama) + Playwright. Sin código hardcodeado, sin APIs externas, sin costos.
-
-Testing web automático usando IA local (Ollama) + Playwright. Sin código hardcodeado.
 
 ## Características
 
