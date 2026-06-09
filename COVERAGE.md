@@ -8,7 +8,7 @@ python -m pytest --cov=. --cov-report=term-missing
 
 ## Current state
 
-Total: **58%** measured (121 tests passing).
+Total: **58%** measured (127 tests passing).
 
 ### Covered
 | Module | Coverage |
