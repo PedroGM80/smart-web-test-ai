@@ -5,7 +5,10 @@ Combina plan inicial con patrones de tests anteriores similares
 
 from typing import List, Dict, Optional
 from knowledge_base import TestKnowledgeBase
-from langchain_ollama import OllamaLLM
+try:
+    from langchain_ollama import OllamaLLM
+except ImportError:
+    OllamaLLM = None
 from rich.console import Console
 
 console = Console()
@@ -49,7 +52,7 @@ class RAGOptimizer:
         """
         
         self.kb = knowledge_base or TestKnowledgeBase(embedding_model=embedding_model)
-        self.llm = OllamaLLM(model=llm_model)
+        self.llm = OllamaLLM(model=llm_model) if OllamaLLM else None
         self.embedding_model = embedding_model
     
     def improve_plan(self,
