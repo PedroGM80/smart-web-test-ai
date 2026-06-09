@@ -29,6 +29,23 @@ Testing web automático usando **IA local** (Ollama) + Playwright. Sin código h
 
 ## Instalación
 
+### Como paquete (recomendado)
+
+```bash
+git clone https://github.com/PedroGM80/smart-web-test-ai.git
+cd smart-web-test-ai
+python3 -m venv .venv && source .venv/bin/activate
+
+pip install -e .              # núcleo: CLI, base de datos, doctor, --dry-run
+pip install -e ".[all]"       # todo el stack (Ollama/Playwright/ChromaDB...)
+playwright install chromium   # navegadores (solo para ejecución real)
+
+smart-test --help             # comando instalado
+smart-test-doctor             # verifica tu entorno
+```
+
+Extras disponibles: `[ai]` `[rag]` `[api]` `[ui]` `[metrics]` `[analytics]` `[test]` `[all]`.
+
 ### 1. Instala Ollama
 
 ```bash
