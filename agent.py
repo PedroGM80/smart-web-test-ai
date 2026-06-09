@@ -165,10 +165,16 @@ Acciones posibles:
 - wait (espera elemento)
 - screenshot (captura pantalla)
 - hover (pasa mouse)
+- press (pulsa tecla en el elemento, value=tecla, ej Enter)
+- select (elige opción en un dropdown, value=opción)
+- goto (navega a URL directa; pon la URL en el campo locator)
+- scroll (hace scroll hasta el elemento)
 
 Ejemplos:
 input[name="search"]|fill|test query
+input[name="search"]|press|Enter
 button:has-text("Search")|click|
+select#country|select|Spain
 .error-message|check|
 
 SOLO ese formato, una acción por línea. Sin explicaciones.
@@ -194,8 +200,20 @@ SOLO ese formato, una acción por línea. Sin explicaciones.
         self._log_result("ℹ", f"Generadas {len(actions)} acciones")
         return actions
     
+    # Action verbs the LLM may use. Kept in one place so the prompt and the
+    # executor never drift apart.
+    SUPPORTED_ACTIONS = (
+        "fill", "click", "check", "wait", "screenshot", "hover",
+        "press", "select", "goto", "scroll",
+    )
+
     def execute_actions(self, page: Page, actions: list) -> dict:
-        """Ejecuta acciones generadas por IA"""
+        """Ejecuta acciones generadas por IA.
+
+        Returns counts plus `navigated`: True if any action changed the page
+        URL, which signals the caller that the DOM analysis is stale and a
+        re-observation is needed (multi-step flows).
+        """
         
         console.print(Panel(f"Ejecutando {len(actions)} acciones", title="Ejecución"))
         
@@ -203,8 +221,15 @@ SOLO ese formato, una acción por línea. Sin explicaciones.
             "total": len(actions),
             "passed": 0,
             "failed": 0,
-            "errors": []
+            "errors": [],
+            "navigated": False,
         }
+        
+        start_url = None
+        try:
+            start_url = page.url
+        except Exception:
+            pass
         
         for i, action in enumerate(actions, 1):
             locator = action['locator']
@@ -245,6 +270,29 @@ SOLO ese formato, una acción por línea. Sin explicaciones.
                     self._log_result("✓", f"[{i}] Hover: {locator}")
                     results["passed"] += 1
                 
+                elif act == "press":
+                    # e.g. press Enter on the search box: locator|press|Enter
+                    elem.press(value or "Enter")
+                    self._log_result("✓", f"[{i}] Press {value or 'Enter'}: {locator}")
+                    results["passed"] += 1
+                
+                elif act == "select":
+                    # dropdowns: locator|select|option_value
+                    elem.select_option(value or "")
+                    self._log_result("✓", f"[{i}] Select '{value}': {locator}")
+                    results["passed"] += 1
+                
+                elif act == "goto":
+                    # direct navigation: url|goto|  (locator field carries the URL)
+                    page.goto(locator)
+                    self._log_result("✓", f"[{i}] Goto: {locator}")
+                    results["passed"] += 1
+                
+                elif act == "scroll":
+                    elem.scroll_into_view_if_needed()
+                    self._log_result("✓", f"[{i}] Scroll to: {locator}")
+                    results["passed"] += 1
+                
                 else:
                     raise ValueError(f"Unknown action: {act}")
             except Exception as e:
@@ -254,6 +302,13 @@ SOLO ese formato, una acción por línea. Sin explicaciones.
                     "action": f"{act}:{locator}",
                     "error": str(e)
                 })
+        
+        # Did any action change the page? If so the original analysis is stale.
+        try:
+            if start_url is not None and page.url != start_url:
+                results["navigated"] = True
+        except Exception:
+            pass
         
         return results
     
@@ -273,8 +328,71 @@ Da un veredicto claro: PASÓ o FALLÓ, con razones.
         
         return validation
     
+    def _run_steps(self, page, url: str, objectives: str, max_steps: int = 3) -> dict:
+        """Observe -> act -> re-observe loop.
+
+        Each step analyzes the CURRENT page, generates actions for it and
+        executes them. If execution navigated to a new page, the next step
+        re-analyzes instead of acting on a stale DOM. Stops when there is no
+        navigation, no actions are produced, or max_steps is reached.
+
+        Returns aggregated execution results plus the first plan and the
+        number of steps taken. Extracted from test_web so it can be unit
+        tested with a mocked page/LLM.
+        """
+        aggregated = {"total": 0, "passed": 0, "failed": 0, "errors": [],
+                      "navigated": False}
+        first_plan = None
+        steps_taken = 0
+
+        for step in range(1, max_steps + 1):
+            steps_taken = step
+            current_url = url
+            try:
+                current_url = page.url
+            except Exception:
+                pass
+
+            # 1. Observe the CURRENT page
+            page_analysis = self.analyze_page(page, current_url)
+
+            # 2. Plan (full plan on step 1; later steps continue the objective)
+            if step == 1:
+                plan = self.generate_test_plan(current_url, objectives, page_analysis)
+                first_plan = plan
+                console.print(f"\n[cyan]Plan:[/cyan]\n{plan}\n")
+            else:
+                console.print(f"[cyan]Paso {step}: la página cambió, re-analizando[/cyan]")
+                plan = self.generate_test_plan(
+                    current_url,
+                    f"Continúa con el objetivo: {objectives}. "
+                    f"Ya estás en {current_url} tras las acciones anteriores.",
+                    page_analysis,
+                )
+
+            # 3. Generate actions for the current DOM
+            actions = self.generate_actions(plan, page_analysis)
+            if not actions:
+                break
+
+            # 4. Execute
+            step_results = self.execute_actions(page, actions)
+            aggregated["total"] += step_results["total"]
+            aggregated["passed"] += step_results["passed"]
+            aggregated["failed"] += step_results["failed"]
+            aggregated["errors"].extend(step_results["errors"])
+
+            # 5. Continue only if we navigated somewhere new
+            if not step_results.get("navigated"):
+                break
+            aggregated["navigated"] = True
+
+        aggregated["steps"] = steps_taken
+        return {"execution": aggregated, "plan": first_plan or "",
+                "actions_total": aggregated["total"]}
+
     def test_web(self, url: str, objectives: str, headless: bool = True, 
-                 generate_cucumber: bool = False) -> dict:
+                 generate_cucumber: bool = False, max_steps: int = 3) -> dict:
         """
         Ejecuta testing automático completo en una URL
         
@@ -303,21 +421,17 @@ Da un veredicto claro: PASÓ o FALLÓ, con razones.
                 page = browser.new_page()
                 page.goto(url)
                 
-                # 1. Analizar página
-                page_analysis = self.analyze_page(page, url)
+                # Observe -> act -> re-observe loop (multi-step flows)
+                run = self._run_steps(page, url, objectives, max_steps=max_steps)
+                plan = run["plan"]
+                execution_results = run["execution"]
+                actions_total = run["actions_total"]
                 
-                # 2. Generar plan
-                plan = self.generate_test_plan(url, objectives, page_analysis)
-                console.print(f"\n[cyan]Plan:[/cyan]\n{plan}\n")
-                
-                # 3. Generar acciones
-                actions = self.generate_actions(plan, page_analysis)
-                
-                # 4. Ejecutar acciones
-                execution_results = self.execute_actions(page, actions)
-                
-                # 5. Validación final
+                # Validación final
                 validation = self.final_validation(page)
+                
+                # Cucumber needs the last page analysis; reuse a fresh one
+                page_analysis = self.analyze_page(page, page.url) if generate_cucumber else None
                 
                 browser.close()
                 
@@ -334,7 +448,8 @@ Da un veredicto claro: PASÓ o FALLÓ, con razones.
                     "objectives": objectives,
                     "objective": objectives,
                     "plan": plan,
-                    "actions_total": len(actions),
+                    "actions_total": actions_total,
+                    "steps": execution_results.get("steps", 1),
                     "execution": execution_results,
                     "validation": validation,
                     "results_log": self.test_results,

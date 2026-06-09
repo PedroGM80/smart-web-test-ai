@@ -75,6 +75,12 @@ Ejemplos:
         action="store_true",
         help="Ejecutar el flujo con un agente simulado (sin Ollama ni navegador)"
     )
+    parser.add_argument(
+        "--max-steps",
+        type=int,
+        default=3,
+        help="Máximo de pasos observar-actuar (flujos multi-página, default 3)"
+    )
     
     args = parser.parse_args()
     
@@ -102,7 +108,8 @@ Ejemplos:
             url=args.url,
             objectives=args.objective,
             headless=not args.headed,
-            generate_cucumber=args.cucumber
+            generate_cucumber=args.cucumber,
+            max_steps=args.max_steps
         )
         
         # Persist the result so CLI history, the dashboard and the API all

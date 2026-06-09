@@ -81,3 +81,49 @@ def test_unknown_action_counts_as_failure(a):
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+def test_press_action(a):
+    page = MagicMock()
+    page.url = "https://x.com"
+    res = a.execute_actions(page, [{"locator": "#search", "action": "press", "value": "Enter"}])
+    assert res["passed"] == 1
+    page.locator.return_value.press.assert_called_with("Enter")
+
+
+def test_select_action(a):
+    page = MagicMock()
+    page.url = "https://x.com"
+    res = a.execute_actions(page, [{"locator": "#country", "action": "select", "value": "Spain"}])
+    assert res["passed"] == 1
+    page.locator.return_value.select_option.assert_called_with("Spain")
+
+
+def test_goto_action(a):
+    page = MagicMock()
+    page.url = "https://x.com"
+    res = a.execute_actions(page, [{"locator": "https://y.com", "action": "goto", "value": None}])
+    assert res["passed"] == 1
+    page.goto.assert_called_with("https://y.com")
+
+
+def test_scroll_action(a):
+    page = MagicMock()
+    page.url = "https://x.com"
+    res = a.execute_actions(page, [{"locator": "#footer", "action": "scroll", "value": None}])
+    assert res["passed"] == 1
+
+
+def test_navigated_flag_set_when_url_changes(a):
+    page = MagicMock()
+    urls = iter(["https://x.com", "https://x.com/results"])
+    type(page).url = property(lambda self: next(urls))
+    res = a.execute_actions(page, [{"locator": "#go", "action": "click", "value": None}])
+    assert res["navigated"] is True
+
+
+def test_navigated_flag_false_when_url_same(a):
+    page = MagicMock()
+    page.url = "https://x.com"
+    res = a.execute_actions(page, [{"locator": "#btn", "action": "click", "value": None}])
+    assert res["navigated"] is False

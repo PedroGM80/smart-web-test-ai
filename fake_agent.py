@@ -22,7 +22,7 @@ class FakeAgent:
         self.vision_model = vision_model
 
     def test_web(self, url: str, objectives: str, headless: bool = True,
-                 generate_cucumber: bool = False) -> dict:
+                 generate_cucumber: bool = False, max_steps: int = 3) -> dict:
         # Deterministic pseudo-result derived from the inputs
         seed = int(sha256(f"{url}|{objectives}".encode()).hexdigest(), 16)
         total = 5 + (seed % 6)            # 5..10 actions
