@@ -78,3 +78,47 @@ class TestDomainRepository:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestAddValidation:
+    """Input validation at the data boundary"""
+
+    def _repo(self):
+        from database import Base, create_db_engine, create_session_factory
+        engine = create_db_engine("sqlite:///:memory:")
+        Base.metadata.create_all(bind=engine)
+        from repositories import TestRepository
+        return TestRepository(create_session_factory(engine))
+
+    def test_rejects_empty_url(self):
+        import pytest
+        with pytest.raises(ValueError, match="url"):
+            self._repo().add(url="", objective="o", pass_rate=50, duration=1,
+                             mode="balanced", model="m")
+
+    def test_rejects_pass_rate_out_of_range(self):
+        import pytest
+        with pytest.raises(ValueError, match="pass_rate"):
+            self._repo().add(url="https://x.com", objective="o", pass_rate=150,
+                             duration=1, mode="balanced", model="m")
+        with pytest.raises(ValueError, match="pass_rate"):
+            self._repo().add(url="https://x.com", objective="o", pass_rate=-1,
+                             duration=1, mode="balanced", model="m")
+
+    def test_rejects_negative_duration(self):
+        import pytest
+        with pytest.raises(ValueError, match="duration"):
+            self._repo().add(url="https://x.com", objective="o", pass_rate=50,
+                             duration=-5, mode="balanced", model="m")
+
+    def test_rejects_invalid_mode(self):
+        import pytest
+        with pytest.raises(ValueError, match="mode"):
+            self._repo().add(url="https://x.com", objective="o", pass_rate=50,
+                             duration=1, mode="turbo", model="m")
+
+    def test_none_pass_rate_defaults_to_zero(self):
+        repo = self._repo()
+        tid = repo.add(url="https://x.com", objective="o", pass_rate=None,
+                       duration=None, mode="balanced", model="m")
+        assert repo.get_by_id(tid).pass_rate == 0.0

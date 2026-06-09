@@ -36,15 +36,33 @@ class TestRepository(BaseRepository):
     __test__ = False  # avoid pytest collection (class name starts with "Test")
 
     def add(self, url, objective, pass_rate, duration, mode, model, status="success"):
+        # Validate at the data boundary so garbage never reaches the table.
+        if not url:
+            raise ValueError("url is required")
+        pass_rate = float(pass_rate if pass_rate is not None else 0.0)
+        if not 0.0 <= pass_rate <= 100.0:
+            raise ValueError(f"pass_rate must be 0-100, got {pass_rate}")
+        duration = float(duration if duration is not None else 0.0)
+        if duration < 0:
+            raise ValueError(f"duration must be >= 0, got {duration}")
+        try:
+            mode_enum = TestMode(mode)
+        except ValueError:
+            raise ValueError(f"invalid mode '{mode}' (speed/balanced/quality)")
+        try:
+            status_enum = TestStatus(status)
+        except ValueError:
+            raise ValueError(f"invalid status '{status}'")
+
         with self._session() as session:
             test = Test(
                 url=url,
                 objective=objective,
                 pass_rate=pass_rate,
                 duration=duration,
-                mode=TestMode(mode),
+                mode=mode_enum,
                 model=model,
-                status=TestStatus(status),
+                status=status_enum,
             )
             session.add(test)
             session.commit()
