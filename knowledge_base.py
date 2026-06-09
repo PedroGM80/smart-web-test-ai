@@ -8,9 +8,18 @@ from pathlib import Path
 from typing import List, Dict, Optional
 from datetime import datetime
 
-from chromadb.config import Settings
-import chromadb
-from langchain_community.embeddings import OllamaEmbeddings
+# ChromaDB + Ollama embeddings are only needed for the live knowledge base.
+# Import defensively so the module loads (and degrades to a no-op) without them.
+try:
+    from chromadb.config import Settings
+    import chromadb
+except ImportError:
+    chromadb = None
+    Settings = None
+try:
+    from langchain_community.embeddings import OllamaEmbeddings
+except ImportError:
+    OllamaEmbeddings = None
 from rich.console import Console
 
 console = Console()
@@ -46,6 +55,8 @@ class TestKnowledgeBase:
             objectives="Testear repo"
         )
     """
+    
+    __test__ = False  # avoid pytest collection (class name starts with Test)
     
     def __init__(self, 
                  knowledge_dir: str = "./knowledge",
