@@ -245,6 +245,8 @@ SOLO ese formato, una acción por línea. Sin explicaciones.
                     self._log_result("✓", f"[{i}] Hover: {locator}")
                     results["passed"] += 1
                 
+                else:
+                    raise ValueError(f"Unknown action: {act}")
             except Exception as e:
                 self._log_result("✗", f"[{i}] {act}: {locator}", str(e))
                 results["failed"] += 1
