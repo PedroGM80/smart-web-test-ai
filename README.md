@@ -216,6 +216,23 @@ smart-web-test-ai/
     └── custom_test.py    # Ejemplo personalizado
 ```
 
+## Tests
+
+La suite unitaria corre sin Ollama, Playwright ni ChromaDB: los módulos que
+dependen de esos servicios usan imports defensivos, y las integraciones
+(Slack, email, GitHub, InfluxDB) se prueban con HTTP/SMTP simulados.
+
+```bash
+pip install pytest pytest-cov
+pytest                              # suite completa
+pytest --cov=. --cov-report=term-missing   # con cobertura
+```
+
+Cobertura medida actual: **58%** (121 tests). El desglose por módulo y lo que
+queda fuera está en [COVERAGE.md](COVERAGE.md). Los scripts de `examples/` y
+`test_examples.py` requieren el stack completo y quedan excluidos de la suite
+unitaria (ver `pytest.ini`).
+
 ## Reportes
 
 Los reportes se guardan en `reports/` como JSON:
