@@ -6,7 +6,10 @@ Nivel 4: Experto - Benchmarking automático
 import time
 import json
 from typing import Dict, List
-from langchain_ollama import OllamaLLM
+try:
+    from langchain_ollama import OllamaLLM
+except ImportError:
+    OllamaLLM = None
 from model_detector import ModelDetector
 from rich.console import Console
 from rich.table import Table
