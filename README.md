@@ -76,6 +76,16 @@ cp .env.example .env
 
 ## Uso
 
+### Probar sin instalar nada (dry-run)
+
+¿No tienes Ollama ni los navegadores de Playwright todavía? Ejecuta el flujo
+completo con un agente simulado. Genera un reporte válido y lo persiste, así
+puedes ver el ciclo run -> historial -> dashboard funcionando:
+
+```bash
+python smart_test.py "https://example.com" "Verificar carga" --dry-run
+```
+
 ### CLI Simple
 
 ```bash
