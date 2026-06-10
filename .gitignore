@@ -60,3 +60,7 @@ smarttest.db
 *.egg-info/
 build/
 dist/
+
+# Local session helpers (never part of the repo)
+PUSH_TO_GITHUB.md
+push_to_github.sh
