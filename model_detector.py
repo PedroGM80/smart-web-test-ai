@@ -6,6 +6,7 @@ Nivel 3: Avanzado - Auto-detection y descarga
 import subprocess
 from typing import List, Dict, Optional
 from rich.console import Console
+from rich.table import Table
 from model_selector import ModelSelector
 
 console = Console()
