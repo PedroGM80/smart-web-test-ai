@@ -345,8 +345,8 @@ def register_cli_commands(parser):
     # Config commands
     config_parser = subparsers.add_parser("config", help="Manage configurations")
     config_sub = config_parser.add_subparsers(dest="config_cmd")
-    config_sub.add_parser("save", help="Save current config")
-    config_sub.add_parser("load", help="Load saved config")
+    config_load = config_sub.add_parser("load", help="Show a saved config")
+    config_load.add_argument("name", help="Config name")
     config_sub.add_parser("list", help="List saved configs")
     
     # History commands
@@ -376,6 +376,49 @@ def register_cli_commands(parser):
     
     # Cache commands
     subparsers.add_parser("clear-cache", help="Clear local cache")
+
+
+# Subcommand names handled by run_cli_command (used by the smart-test entry
+# point to decide between "run a test" and "utility subcommand").
+CLI_SUBCOMMANDS = {"config", "history", "compare", "export", "stats", "clear-cache"}
+
+
+def run_cli_command(argv, enhancer=None) -> int:
+    """Parse and dispatch a utility subcommand. Returns an exit code.
+
+    `enhancer` is injectable for tests (e.g. with an in-memory repository).
+    """
+    import argparse
+    parser = argparse.ArgumentParser(prog="smart-test")
+    register_cli_commands(parser)
+    args = parser.parse_args(argv)
+
+    cli = enhancer or CLIEnhancer()
+
+    if args.command == "history":
+        if args.history_cmd == "clear":
+            cli.history_clear()
+        else:
+            cli.history_list(getattr(args, "last", 10))
+    elif args.command == "compare":
+        cli.compare_models(args.model1, args.model2, last_n=args.last)
+    elif args.command == "export":
+        ok = (cli.export_csv(args.output, args.last) if args.format == "csv"
+              else cli.export_json(args.output, args.last))
+        return 0 if ok else 1
+    elif args.command == "stats":
+        cli.stats_summary(period=args.period)
+    elif args.command == "clear-cache":
+        cli.clear_cache()
+    elif args.command == "config":
+        if args.config_cmd == "load":
+            loaded = cli.config_load(args.name)
+            if loaded is None:
+                return 1
+            console.print(loaded)
+        else:
+            cli.config_list()
+    return 0
 
 
 if __name__ == "__main__":

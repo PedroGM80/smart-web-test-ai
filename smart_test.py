@@ -37,6 +37,11 @@ def persist_report(repository, *, url, objective, model, report):
 
 
 def main():
+    # Utility subcommands (history/stats/export/compare/config/clear-cache)
+    # are dispatched to the CLI module; everything else is "run a test".
+    from cli_enhancements import CLI_SUBCOMMANDS, run_cli_command
+    if len(sys.argv) > 1 and sys.argv[1] in CLI_SUBCOMMANDS:
+        sys.exit(run_cli_command(sys.argv[1:]))
     parser = argparse.ArgumentParser(
         description="IA Testing Web - Testing automático con IA local",
         formatter_class=argparse.RawDescriptionHelpFormatter,
