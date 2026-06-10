@@ -15,9 +15,15 @@ def rag(tmp_path, monkeypatch):
 
 
 def _populate(rag, domains, success=True):
-    for d in domains:
+    for i, d in enumerate(domains):
+        # Vary per-domain stats so KMeans actually has distinct points
         rag.learner.record_result(f"https://{d}", "mistral", "analysis",
-                                   duration=5.0, success=success, tokens=50)
+                                   duration=2.0 + i * 4.0,
+                                   success=(success if i % 2 == 0 else not success),
+                                   tokens=30 + i * 40)
+        if i % 2 == 0:
+            rag.learner.record_result(f"https://{d}", "mistral", "analysis",
+                                       duration=1.0 + i, success=True, tokens=20)
 
 
 def test_predict_defects_unknown_domain(rag):
