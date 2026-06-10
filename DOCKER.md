@@ -1,5 +1,10 @@
 # Docker - Smart Test Deployment
 
+> **Status: unverified.** The Docker setup predates the v1.4.1 hardening and
+> has not been built/tested since. It installs the full requirements.txt and
+> may need updates (e.g. new env vars in .env.example). Treat as a starting
+> point, not a guarantee.
+
 Ejecuta Smart Test con Docker. Cero configuración local.
 
 ---
